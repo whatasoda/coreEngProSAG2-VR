@@ -1,0 +1,20 @@
+#morning {
+
+}
+body {
+  overflow: hidden;
+  margin: 0;
+  transition-timing-function: cubic-bezier(0.15, 0.6, 0.25, 1.1);
+}
+.view {
+  width: 100vw;
+  height: inherit;
+  margin-top: 10vh;
+  position: absolute;
+  background-repeat: repeat-x;
+  background-image: url("../img/DitchRiver.jpg");
+  background-size: cover;
+  background-position: inherit;
+  transition-duration: 1s;
+  transition-timing-function: cubic-bezier(0.15, 0.6, 0.25, 1.1);
+}
