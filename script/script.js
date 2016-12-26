@@ -1,19 +1,41 @@
 (function(){
-  var view = document.getElementsByClassName("view");
-  var parameter = document.getElementById("parameter");
-
+  var view = document.getElementById("view");
   var position = 0;
   var speed = 0.1;
+  var loadProgress = 0;
   var height, BGPosition, imgWidth, imgHeight, aspect;
-  var image = new Image();
-  image.onload = function(){
-    imgWidth = image.width;
-    imgHeight = image.height;
-    aspect = imgHeight / imgWidth;
-    setHeight(parameter);
-    setBGPosition(parameter);
-  };
-  image.src = "./img/DitchRiver.jpg";
+  var images = [
+    new Image(), // top
+    new Image(), // north
+    new Image(), // east
+    new Image(), // south
+    new Image(), // west
+    new Image(), // bottom
+  ]
+
+  for(var n=0; n<images.length; n++){
+    images[n].onload = () => {
+      loadProgress++;
+      refreshLoadProgress();
+    }
+    images[n].src = "./img/cubemap" + ("0"+n).splice(2) + ".jpg";
+  }
+
+  var spherical = {
+    theta  : 0, // rad : horizonal
+    phi    : 0, // rad : vertical
+    radius : 0, // px
+    getMatrix3D : (thetaOffset = 0, phiOffset = 0) => {
+      translate = [
+        this.radius *  Math.sin(this.theta) * Math.cos(this.phi),
+        this.radius *  Math.sin(this.phi),
+        this.radius * -Math.cos(this.theta) * Math.cos(this.phi),
+      ];
+
+
+    },
+  }
+
 
   var DirBGI = "./img/bg/";
   var BGIfileType = ".jpg";
@@ -34,16 +56,6 @@
     tokyo    : [[0.70,0.90],],
     kyoto    : [[0.85,1.00],],
   };
-  var time = 0;
-  var TimePosition;
-  var TimeMargin = 0.25;
-  var TimeRamp = {
-    morning  : [[0.00,0.50],],
-    daytime  : [[0.25,0.75],],
-    night    : [[0.50,1.00],],
-    midnight : [[0.75,"<<"],["<<",0.25]],
-  };
-
 
   var BGMs = {};
   countries.forEach(function(name){
@@ -73,10 +85,6 @@
     setHeight(parameter);
     setBGPosition(parameter);
   });
-
-  // var timer = setInterval(function () {
-  //   console.log(test.opacity);
-  // }, 10);
 
 
   function setHeight(target){
@@ -115,6 +123,10 @@
       return result = 0;
     };
   }();
+
+  refreshLoadProgress = () =>{
+
+  }
   var element = view.morning;
   var test = (element.currentStyle || document.defaultView.getComputedStyle(element, ''));
 
