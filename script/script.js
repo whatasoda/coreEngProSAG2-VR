@@ -1,48 +1,9 @@
 (function(){
-  var view = document.getElementById("view");
-  var position = 0;
-  var speed = 0.1;
   var loadProgress = 0;
   var height, BGPosition, imgWidth, imgHeight, aspect;
-  var images = [
-    new Image(), // top
-    new Image(), // north
-    new Image(), // east
-    new Image(), // south
-    new Image(), // west
-    new Image(), // bottom
-  ]
 
-  for(var n=0; n<images.length; n++){
-    images[n].onload = () => {
-      loadProgress++;
-      refreshLoadProgress();
-    }
-    images[n].src = "./img/cubemap" + ("0"+n).splice(2) + ".jpg";
-  }
-
-  var spherical = {
-    theta  : 0, // rad : horizonal
-    phi    : 0, // rad : vertical
-    radius : 0, // px
-    getMatrix3D : (thetaOffset = 0, phiOffset = 0) => {
-      translate = [
-        this.radius *  Math.sin(this.theta) * Math.cos(this.phi),
-        this.radius *  Math.sin(this.phi),
-        this.radius * -Math.cos(this.theta) * Math.cos(this.phi),
-      ];
-
-
-    },
-  }
-
-
-  var DirBGI = "./img/bg/";
-  var BGIfileType = ".jpg";
   var DirBGM = "./audio/bg/";
   var BGMfileType = ".mp3";
-
-  var times = ["morning","daytime","night","midnight"];
   var countries = ["norway","malaysia","china","taiwan","sapporo","tokyo","kyoto"];
 
   var BGMPosition;
@@ -57,51 +18,41 @@
     kyoto    : [[0.85,1.00],],
   };
 
-  var BGMs = {};
-  countries.forEach(function(name){
-    BGMs[name] = new Audio(DirBGM+name+BGMfileType);
-    BGMs[name].loop = true;
-    BGMs[name].autoplay = true;
+  DHUCEPSAG2VR.initialize();
+
+  window.addEventListener("deviceorientation", function(e){
+    DHUCEPSAG2VR.spherical.theta = event.beta / 180 * Math.PI;
+    DHUCEPSAG2VR.spherical.phi   = event.gamma  / 180 * Math.PI;
+    DHUCEPSAG2VR.spherical.spin  = event.alpha / 180 * Math.PI;
+    for(var m=0; m<1+DHUCEPSAG2VR.vr_on; m++) DHUCEPSAG2VR.boxes[m].style.transform = DHUCEPSAG2VR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,DHUCEPSAG2VR.spherical.getMatrix3D());
   });
 
-  var relativePosition;
-  document.addEventListener("mousewheel", function(e){
-    position += e.wheelDelta * speed;
-    relativePosition = (setBGPosition(parameter) * aspect / height);
-    BGMPosition = relativePosition % 1;
-    if(BGMPosition < 0) BGMPosition++;
-    countries.forEach(function(name){
-      BGMs[name].volume = applyRamp(BGMPosition, BGMRamp[name], BGMMargin);
-    });
-    TimePosition = (relativePosition + time) / 0.7 % 1;
-    if(TimePosition < 0) TimePosition++;
-    times.forEach(function(name){
-      view[name].style.opacity = applyRamp(TimePosition, TimeRamp[name], TimeMargin) + 0.1;
-    });
-
+  document.addEventListener("mousedown", (e) => { DHUCEPSAG2VR.mouseOn = true; });
+  document.addEventListener("mouseup", (e) => { DHUCEPSAG2VR.mouseOn = false; });
+  document.addEventListener("mousemove", (e) => {
+    if(DHUCEPSAG2VR.mouseOn){
+      DHUCEPSAG2VR.spherical.theta += e.movementY/100;
+      DHUCEPSAG2VR.spherical.phi -= e.movementX/100;
+      for(var m=0; m<1+DHUCEPSAG2VR.vr_on; m++) DHUCEPSAG2VR.boxes[m].style.transform = DHUCEPSAG2VR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,DHUCEPSAG2VR.spherical.getMatrix3D());
+    }
   });
 
+  var style;
   window.addEventListener("resize", function(e){
-    setHeight(parameter);
-    setBGPosition(parameter);
+    for(var m=0; m<1+DHUCEPSAG2VR.vr_on; m++){
+      for(var n=0; n<DHUCEPSAG2VR.images[m+DHUCEPSAG2VR.vr_on].length; n++){
+        style = DHUCEPSAG2VR.box_transform[n%6 + ((n/6)>1?2:0)];
+        DHUCEPSAG2VR.boxes[m].children[n].children[0].style.transform = style[0] + (DHUCEPSAG2VR.boxes[m].clientWidth/2) + style[1];
+        DHUCEPSAG2VR.boxes[m].children[n].children[1].style.transform = style[0] + (DHUCEPSAG2VR.boxes[m].clientWidth/2) + style[1];
+      }
+      DHUCEPSAG2VR.boxes[m].style.transform = DHUCEPSAG2VR.boxes[m].style.transform.replace(/scale\(.*?\)/,"scale(" + DHUCEPSAG2VR.boxes[m].clientWidth/2 + ")");
+    }
   });
 
-
-  function setHeight(target){
-    height = (window.innerHeight * 0.8 > aspect * window.innerWidth ? window.innerHeight * 0.8 : aspect * window.innerWidth);
-    if(target.id === "parameter") target.style.height = height + "px";
-    return height;
-  }
-  function setBGPosition(target){
-    BGPosition = position * height / 100;
-    if(target.id === "parameter") target.style.backgroundPosition = (BGPosition + window.innerWidth / 2) + "px center";
-    return BGPosition;
-  }
-
-  var applyRamp = function(){
+  var applyRamp = (() => {
     var count;
     var result;
-    return function(value, ramp, margin=0){
+    return applyRamp = (value, ramp, margin=0) => {
       result = 0;
       if(!Array.isArray(ramp)) result = 1;
       if(!Array.isArray(ramp[0])) result = 1;
@@ -122,16 +73,10 @@
       }
       return result = 0;
     };
-  }();
+  })();
 
   refreshLoadProgress = () =>{
 
   }
-  var element = view.morning;
-  var test = (element.currentStyle || document.defaultView.getComputedStyle(element, ''));
-
-
-
-
 
 })();

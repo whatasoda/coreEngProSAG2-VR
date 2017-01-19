@@ -1,20 +1,55 @@
-#morning {
-
-}
 body {
   overflow: hidden;
   margin: 0;
-  transition-timing-function: cubic-bezier(0.15, 0.6, 0.25, 1.1);
 }
-.view {
+
+#view {
   width: 100vw;
-  height: inherit;
-  margin-top: 10vh;
+  height: 100vh;
+  position: relative;
+}
+
+.frame {
+  width: 100vw;
+  height: 100vh;
   position: absolute;
-  background-repeat: repeat-x;
-  background-image: url("../img/DitchRiver.jpg");
-  background-size: cover;
-  background-position: inherit;
-  transition-duration: 1s;
-  transition-timing-function: cubic-bezier(0.15, 0.6, 0.25, 1.1);
+  overflow: hidden;
+
+}
+.frame-vr {
+  width: 50vw;
+}
+.frame:first-child {
+  left: 0;
+}
+.frame:last-child {
+  right: 0;
+}
+
+.hdri {
+  transform-origin: center -50vh;
+  perspective-origin: center 50vh;
+  perspective: 1px;
+}
+
+.box {
+  width: 100vw;
+  height: 100vw;
+  position: absolute;
+  transform-style: preserve-3d;
+}
+.frame-vr .box {
+  width: 50vw;
+  height: 50vw;
+}
+
+
+.face>img {
+  width: 100%;
+  height: auto;
+  position: absolute;
+  backface-visibility: hidden;
+}
+.face>img:first-child {
+  width: calc(100% + 1px);
 }
