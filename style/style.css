@@ -14,22 +14,31 @@ body {
   height: 100vh;
   position: absolute;
   overflow: hidden;
-
 }
 .frame-vr {
   width: 50vw;
 }
+.mobile .frame-vr {
+  width: 100vw;
+  height: 50vh;
+}
 .frame:first-child {
   left: 0;
+  top: 0;
 }
 .frame:last-child {
   right: 0;
+  bottom: 0;
 }
 
 .hdri {
+  perspective: 1px;
   transform-origin: center -50vh;
   perspective-origin: center 50vh;
-  perspective: 1px;
+}
+.mobile .hdri {
+  transform-origin: -50vw center;
+  perspective-origin: 50vw center;
 }
 
 .box {
