@@ -106,7 +106,7 @@ var PSAVR = {
       for(var m=0; m<2; m++) for(var n=0; n<PSAVR.boxes[m].children.length; n++) PSAVR.boxes[m].children[n].innerHTML = "";
       for(var m=0; m<1+PSAVR.vr_on; m++){
         PSAVR.boxes[m].style.transform = (PSAVR.mobile?"rotate(-90deg) ":"") + "scale(" + PSAVR.boxes[m].clientWidth/2 + ") " + PSAVR.spherical.getMatrix3D();
-        PSAVR.frames[m].className = "frame" + (PSAVR.vr_on?" frame-vr":"");
+        PSAVR.frames[m].className = "frame" + (PSAVR.vr_on?" VR-on":"");
         for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++) PSAVR.images[m+PSAVR.vr_on][n].src = "./img/cubemap" + (m+PSAVR.vr_on) + "_" + ("0"+n).slice(-2) + ".bmp";
       }
     }
