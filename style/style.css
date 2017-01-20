@@ -7,6 +7,22 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
+  background: black;
+}
+
+.hdri {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  perspective: 1px;
+}
+#view:not(.mobile) .hdri {
+  transform-origin: center -50vh;
+  perspective-origin: center 50vh;
+}
+#view.mobile .hdri {
+  transform-origin: -50vw center;
+  perspective-origin: 50vw center;
 }
 
 .frame {
@@ -15,12 +31,14 @@ body {
   position: absolute;
   overflow: hidden;
 }
-.VR-on {
-  width: 50vw;
+.frame.sub:not(.VR-on) {
+  display: none;
 }
-.mobile .VR-on {
-  width: 100vw;
-  height: 50vh;
+#view:not(.mobile) .VR-on {
+  width: 49.5vw;
+}
+#view.mobile .VR-on {
+  height: 49.5vh;
 }
 .frame:first-child {
   left: 0;
@@ -29,16 +47,6 @@ body {
 .frame:last-child {
   right: 0;
   bottom: 0;
-}
-
-.hdri {
-  perspective: 1px;
-  transform-origin: center -50vh;
-  perspective-origin: center 50vh;
-}
-.mobile .hdri {
-  transform-origin: -50vw center;
-  perspective-origin: 50vw center;
 }
 
 .box {
@@ -52,7 +60,6 @@ body {
   height: 50vw;
 }
 
-
 .face>img {
   width: 100%;
   height: auto;
@@ -63,14 +70,75 @@ body {
   width: calc(100% + 1px);
 }
 
-.VR-frame, .VR-frame svg {
+
+.gui {
   width: 100%;
   height: 100%;
   position: absolute;
+  perspective: 50vw;
+  transform-origin: center center;
+}
+.primary .gui {
+  perspective-origin: 45% center;
+}
+.sub .gui {
+  perspective-origin: 55% center;
+}
+.gui-content {
+  position: absolute;
+}
+.gui-content.front {
+  z-index: 6;
+}
+.gui-content.back {
+  z-index: 4;
+}
+#view:not(.mobile) .gui-content {
+  width: 100vw;
+  height: 100vh;
+}
+#view:not(.mobile) .VR-on .gui-content {
+  width: 50vw;
+}
+#view.mobile .gui-content{
+  width: 100vh;
+  height: 100vw;
+  top: calc(50vh - 50vw);
+  left: calc(50vw - 50vh);
+  transform: rotate(90deg);
+}
+#view.mobile .VR-on .gui-content{
+  width: 49.5vh;
+  top: calc(24.75vh - 50vw);
+  left: calc(50vw - 24.75vh);
 }
 .VR-frame {
-  visibility: hidden;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 5;
+}
+.VR-frame {
+  display: none;
 }
 .VR-on .VR-frame {
-  visibility: visible;
+  display: block;
+}
+
+.cardboard-icon {
+  width: 70px;
+  height: auto;
+  position: absolute;
+  right: 4%;
+  bottom: 4%;
+  opacity: 0.6;
+}
+.primary.VR-on .cardboard-icon {
+  right: 2%;
+}
+.sub.VR-on .cardboard-icon {
+  right: 7%;
+}
+#view:not(.mobile) .cardboard-icon:hover {
+  opacity: 0.9;
 }

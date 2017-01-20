@@ -1,11 +1,12 @@
 var PSAVR = {
   mouseOn : false,
-  vr_on : 1,
+  vr_on : 0,
   mobile : false,
   view   : document.getElementById("view"),
   frames : document.getElementsByClassName("frame"),
   boxes  : document.getElementsByClassName("box"),
   faces  : document.getElementsByClassName("face"),
+  buttons : document.getElementsByClassName("button"),
   spherical : {
     theta  : 0, // rad : vertical
     phi    : 0, // rad : horizonal
@@ -90,7 +91,7 @@ var PSAVR = {
           PSAVR.view.className = "mobile";
         }
         for(var m=0; m<3; m++){ for(var n=0; n<PSAVR.images[m].length; n++){
-          PSAVR.images[m][n].onload = (e) => {
+          PSAVR.images[m][n].onload = (e)=>{
             index_parent = parseInt(e.path[0].src.slice(-8).slice(0,1)) - PSAVR.vr_on;
             index = parseInt(e.path[0].src.slice(-6).slice(0,2));
             style = PSAVR.box_transform[index%6 + (index/6 > 1?2:0)];
@@ -104,13 +105,23 @@ var PSAVR = {
         }}
       }
       for(var m=0; m<2; m++) for(var n=0; n<PSAVR.boxes[m].children.length; n++) PSAVR.boxes[m].children[n].innerHTML = "";
+      for(var m=0; m<2; m++) {
+        PSAVR.frames[m].className = "frame" + (PSAVR.vr_on?" VR-on":"") + (m?" sub":" primary");
+        PSAVR.frames[m];
+      }
       for(var m=0; m<1+PSAVR.vr_on; m++){
         PSAVR.boxes[m].style.transform = (PSAVR.mobile?"rotate(-90deg) ":"") + "scale(" + PSAVR.boxes[m].clientWidth/2 + ") " + PSAVR.spherical.getMatrix3D();
-        PSAVR.frames[m].className = "frame" + (PSAVR.vr_on?" VR-on":"");
         for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++) PSAVR.images[m+PSAVR.vr_on][n].src = "./img/cubemap" + (m+PSAVR.vr_on) + "_" + ("0"+n).slice(-2) + ".bmp";
       }
     }
   })(),
+
+  toggleVR : (click)=>{
+    if(click && PSAVR.mobile) return;
+    PSAVR.vr_on++;
+    PSAVR.vr_on %= 2;
+    PSAVR.initialize();
+  },
 
   bgms : {
     items : [
