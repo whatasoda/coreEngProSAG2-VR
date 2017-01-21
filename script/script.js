@@ -1,4 +1,5 @@
 (function(){
+  PSAVR.initialize();
   var loadProgress = 0;
   var height, BGPosition, imgWidth, imgHeight, aspect;
 
@@ -19,39 +20,6 @@
   };
 
 
-  PSAVR.initialize();
-
-  if(PSAVR.mobile){
-    window.addEventListener("deviceorientation", (e)=>{
-      PSAVR.spherical.theta = (e.gamma + (Math.abs(e.beta)>90?90:-90)) / 180 * Math.PI * (PSAVR.mobile?1:-1);
-      PSAVR.spherical.phi   = (-e.alpha + (Math.abs(e.beta)>90?180:0)) / 180 * Math.PI * (PSAVR.mobile?1:-1);
-      for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,PSAVR.spherical.getMatrix3D());
-    });
-  }
-
-  document.addEventListener("mousedown", (e)=>{ PSAVR.mouseOn = true; });
-  document.addEventListener("mouseup", (e)=>{ PSAVR.mouseOn = false; });
-  document.addEventListener("mousemove", (e)=>{
-    if(PSAVR.mouseOn){
-      PSAVR.spherical.theta_offset += e.movementY/100;
-      PSAVR.spherical.phi_offset -= e.movementX/100;
-      for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,PSAVR.spherical.getMatrix3D());
-    }
-  });
-
-  var style;
-  window.addEventListener("resize", (e)=>{
-    for(var m=0; m<1+PSAVR.vr_on; m++){
-      for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++){
-        style = PSAVR.box_transform[n%6 + ((n/6)>1?2:0)];
-        PSAVR.boxes[m].children[n].children[0].style.transform = style[0] + (PSAVR.boxes[m].clientWidth/2) + style[1];
-        PSAVR.boxes[m].children[n].children[1].style.transform = style[0] + (PSAVR.boxes[m].clientWidth/2) + style[1];
-      }
-      PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/scale\(.*?\)/,"scale(" + PSAVR.boxes[m].clientWidth/2 + ")");
-    }
-  });
-
-  
 
   var applyRamp = (() => {
     var count;
@@ -78,9 +46,5 @@
       return result = 0;
     };
   })();
-
-  refreshLoadProgress = () =>{
-
-  }
 
 })();

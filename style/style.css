@@ -75,7 +75,7 @@ body {
   width: 100%;
   height: 100%;
   position: absolute;
-  perspective: 50vw;
+  perspective: 120vw;
   transform-origin: center center;
 }
 .primary .gui {
@@ -141,4 +141,124 @@ body {
 }
 #view:not(.mobile) .cardboard-icon:hover {
   opacity: 0.9;
+}
+
+.load {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  background: radial-gradient(#aaa,#666);
+  transform-origin: center center;
+  display: none;
+}
+.load.loadstart, .load.loadend {
+  display: block;
+}
+.load.loadend {
+  animation-name: load_escape;
+  animation-delay: 1s;
+  animation-duration: 1s;
+}
+
+.loadbox {
+  width: 100%;
+  height: 100%;
+  transform: rotateY(62deg) rotateX(-3.5deg) rotateZ(-10deg) translateY(0px);
+  transform-origin: center center;
+  transform-style: preserve-3d;
+}
+
+.loadboxface {
+  width: 10vw;
+  height: 10vw;
+  position: absolute;
+  top: calc(50% - 5vw);
+  left: calc(50% - 5vw);
+  opacity: 0.5;
+  overflow: hidden;
+}
+.loadboxface:nth-child(1) { transform: rotateX(90deg) translateZ(2000vw) rotateY(180deg);}
+.loadboxface:nth-child(2) { transform: rotateX(-90deg) translateZ(2000vw) rotateY(180deg);}
+.loadboxface:nth-child(3) { transform: translateZ(2000vw) rotateY(180deg);}
+.loadboxface:nth-child(4) { transform: rotateY(90deg) translateZ(2000vw) rotateY(180deg);}
+.loadboxface:nth-child(5) { transform: rotateY(180deg) translateZ(2000vw) rotateY(180deg);}
+.loadboxface:nth-child(6) { transform: rotateY(-90deg) translateZ(2000vw) rotateY(180deg);}
+.loadstart .loadboxface {
+  animation-duration: 0.8s;
+  animation-timing-function: cubic-bezier(0, 1, 0, 1);
+}
+.loadstart .loadboxface:nth-child(1) { animation-name: loadface_position1; transform: rotateX(90deg) translateZ(5vw) rotateY(180deg);}
+.loadstart .loadboxface:nth-child(2) { animation-name: loadface_position2; transform: rotateX(-90deg) translateZ(5vw) rotateY(180deg);}
+.loadstart .loadboxface:nth-child(3) { animation-name: loadface_position3; transform: translateZ(5vw) rotateY(180deg);}
+.loadstart .loadboxface:nth-child(4) { animation-name: loadface_position4; transform: rotateY(90deg) translateZ(5vw) rotateY(180deg);}
+.loadstart .loadboxface:nth-child(5) { animation-name: loadface_position5; transform: rotateY(180deg) translateZ(5vw) rotateY(180deg);}
+.loadstart .loadboxface:nth-child(6) { animation-name: loadface_position6; transform: rotateY(-90deg) translateZ(5vw) rotateY(180deg);}
+.loadend .loadboxface {
+  transition-delay: 1s;
+  transition-duration: 1s;
+}
+.load.loadend, .loadend .loadboxface {
+  transition-timing-function: cubic-bezier(1, 0, 1, 0);
+}
+.loadend .loadboxface:nth-child(1) { transform: rotateX(90deg) translateZ(2000vw) rotateY(180deg) scale(400);}
+.loadend .loadboxface:nth-child(2) { transform: rotateX(-90deg) translateZ(2000vw) rotateY(180deg) scale(400);}
+.loadend .loadboxface:nth-child(3) { transform: translateZ(2000vw) rotateY(180deg) scale(400);}
+.loadend .loadboxface:nth-child(4) { transform: rotateY(90deg) translateZ(2000vw) rotateY(180deg) scale(400);}
+.loadend .loadboxface:nth-child(5) { transform: rotateY(180deg) translateZ(2000vw) rotateY(180deg) scale(400);}
+.loadend .loadboxface:nth-child(6) { transform: rotateY(-90deg) translateZ(2000vw) rotateY(180deg) scale(400);}
+
+.loadboxface div {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+.loadstart .loadboxface div { transition-duration: 2s;}
+.loadstart .loadboxface div:first-child { animation-name: loadface_fillcolor;  animation-duration: 2s; animation-timing-function: linear; animation-iteration-count: infinite;}
+.loadboxface div:nth-child(2) { background-color: #111;}
+.loadboxface div:last-child { opacity: 0.5;}
+.loadend .loadboxface div:last-child { opacity: 1; transition-duration: 1s; animation-timing-function: cubic-bezier(0, 1, 0, 1);}
+.loadboxface:nth-child(1) div:last-child { background-color: #777;}
+.loadboxface:nth-child(2) div:last-child { background-color: #555;}
+.loadboxface:nth-child(3) div:last-child { background-color: #444;}
+.loadboxface:nth-child(4) div:last-child { background-color: #555;}
+.loadboxface:nth-child(5) div:last-child { background-color: #666;}
+.loadboxface:nth-child(6) div:last-child { background-color: #666;}
+
+@keyframes loadface_position1 {
+  0% {transform: rotateX(90deg) translateZ(2000vw) rotateY(180deg);}
+  100% {transform: rotateX(90deg) translateZ(5vw) rotateY(180deg);}
+}
+@keyframes loadface_position2 {
+  0% {transform: rotateX(-90deg) translateZ(2000vw) rotateY(180deg);}
+  100% {transform: rotateX(-90deg) translateZ(5vw) rotateY(180deg);}
+}
+@keyframes loadface_position3 {
+  0% {transform: translateZ(2000vw) rotateY(180deg);}
+  100% {transform: translateZ(5vw) rotateY(180deg);}
+}
+@keyframes loadface_position4 {
+  0% {transform: rotateY(90deg) translateZ(2000vw) rotateY(180deg);}
+  100% {transform: rotateY(90deg) translateZ(5vw) rotateY(180deg);}
+}
+@keyframes loadface_position5 {
+  0% {transform: rotateY(180deg) translateZ(2000vw) rotateY(180deg);}
+  100% {transform: rotateY(180deg) translateZ(5vw) rotateY(180deg);}
+}
+@keyframes loadface_position6 {
+  0% {transform: rotateY(-90deg) translateZ(2000vw) rotateY(180deg);}
+  100% {transform: rotateY(-90deg) translateZ(5vw) rotateY(180deg);}
+}
+
+
+@keyframes loadface_fillcolor {
+  0% {background-color: hsl(0, 100%, 60%);}
+  25% {background-color: hsl(90, 100%, 60%);}
+  50% {background-color: hsl(180, 100%, 60%);}
+  75% {background-color: hsl(270, 100%, 60%);}
+  100% {background-color: hsl(360, 100%, 60%);}
+}
+@keyframes load_escape {
+  0% {opacity: 1;}
+  20% {opacity: 1;}
+  100% {opacity: 0;}
 }
