@@ -6,6 +6,18 @@ const PSAVR = {
   _loadProgress : 0,
   interval : undefined,
   timeout : [],
+  reqestFull : undefined,
+  exitFull : undefined,
+  fullElementType : undefined,
+  intList : ["00","01","02","03","04","05","06","07"],
+  get fullElement (){
+    switch(PSAVR.fullElementType){
+      case 0b00: return undefined; break;
+      case 0b01: return document.fullscreenElement; break;
+      case 0b10: return document.webkitFullscreenElement; break;
+      case 0b11: return document.mozFullScreenElement; break;
+    }
+  },
   set loadProgress(val){
     this._loadProgress -= val;
   },
@@ -13,6 +25,7 @@ const PSAVR = {
     return ((this._loadProgress/(this.image_count*(1+this.vr_on)))*100);
   },
   view   : document.getElementById("view"),
+  debug   : document.getElementById("debug"),
   frames : document.getElementsByClassName("frame"),
   boxes  : document.getElementsByClassName("box"),
   faces  : document.getElementsByClassName("face"),
@@ -83,10 +96,28 @@ const PSAVR = {
             for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,PSAVR.spherical.getMatrix3D());
           });
         }
+        PSAVR.reqestFull =
+          (PSAVR.view.requestFullscreen && (()=>{PSAVR.view.requestFullscreen();}) ) ||
+          (PSAVR.view.webkitRequestFullscreen && (()=>{PSAVR.view.webkitRequestFullscreen();}) ) ||
+          (PSAVR.view.mozRequestFullScreen && (()=>{PSAVR.view.mozRequestFullScreen();}) ) || undefined;
+        PSAVR.exitFull =
+          (document.exitFullscreen && (()=>{document.exitFullscreen();}) ) ||
+          (document.webkitExitFullscreen && (()=>{document.webkitExitFullscreen();}) ) ||
+          (document.mozCancelFullScreen && (()=>{document.mozCancelFullScreen();}) ) || undefined;
+        if(document.fullscreenElement === null) PSAVR.fullElementType = 0b01;
+        else if(document.webkitFullscreenElement === null) PSAVR.fullElementType = 0b10;
+        else if(document.mozFullScreenElement === null) PSAVR.fullElementType = 0b11;
+        else PSAVR.fullElementType = 0b00;
+        if(PSAVR.reqestFull === undefined || PSAVR.exitFull === undefined || PSAVR.fullElement === undefined){
+          PSAVR.enableFull = false;
+          PSAVR.alert_for_iOS_mobile();
+        } else {
+          PSAVR.enableFull = true;
+        }
         for(var m=0; m<3; m++){ for(var n=0; n<PSAVR.image_count; n++){
           PSAVR.images[m][n].onload = (e)=>{
-            index_parent = parseInt(e.path[0].src.slice(-8).slice(0,1)) - PSAVR.vr_on;
-            index = parseInt(e.path[0].src.slice(-6).slice(0,2));
+            index_parent = parseInt(e.srcElement.src.slice(-8).slice(0,1)) - PSAVR.vr_on;
+            index = parseInt(e.srcElement.src.slice(-6).slice(0,2));
             style = PSAVR.box_transform[index%6 + (index/6 > 1?2:0)];
             PSAVR.boxes[index_parent].children[index].appendChild(PSAVR.images[index_parent+PSAVR.vr_on][index]);
             PSAVR.boxes[index_parent].children[index].innerHTML = PSAVR.boxes[index_parent].children[index].innerHTML + PSAVR.boxes[index_parent].children[index].innerHTML;
@@ -129,8 +160,17 @@ const PSAVR = {
       PSAVR.timeout[0] = setTimeout(()=>{
         PSAVR.refreshLoadStatus();
       }, 1000);
+      if(PSAVR.enableFull){
+        if(PSAVR.vr_on && !PSAVR.fullElement) PSAVR.reqestFull();
+        else if(PSAVR.fullElement) PSAVR.exitFull();
+      }
     }
   })(),
+
+  alert_for_iOS_mobile : ()=>{
+    var message= "iPhoneでは自動で全画面表示ができません。\nこのページをホームに追加してからページを表示して下さい。";
+    window.alert(message);
+  },
 
   toggleVR : (click)=>{
     if(click && PSAVR.mobile) return;

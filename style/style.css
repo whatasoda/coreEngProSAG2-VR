@@ -17,11 +17,11 @@ body {
   perspective: 1px;
 }
 #view:not(.mobile) .hdri {
-  transform-origin: center -50vh;
+  transform-origin: center 50vh;
   perspective-origin: center 50vh;
 }
 #view.mobile .hdri {
-  transform-origin: -50vw center;
+  transform-origin: 50vw center;
   perspective-origin: 50vw center;
 }
 
@@ -35,10 +35,10 @@ body {
   display: none;
 }
 #view:not(.mobile) .VR-on {
-  width: 49.5vw;
+  width: 49vw;
 }
 #view.mobile .VR-on {
-  height: 49.5vh;
+  height: 49vh;
 }
 .frame:first-child {
   left: 0;
@@ -108,9 +108,9 @@ body {
   transform: rotate(90deg);
 }
 #view.mobile .VR-on .gui-content{
-  width: 49.5vh;
-  top: calc(24.75vh - 50vw);
-  left: calc(50vw - 24.75vh);
+  width: 49vh;
+  top: calc(24.5vh - 50vw);
+  left: calc(50vw - 24.5vh);
 }
 .VR-frame {
   width: 100%;
