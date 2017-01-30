@@ -17,11 +17,11 @@ body {
   perspective: 1px;
 }
 #view:not(.mobile) .hdri {
-  transform-origin: center 50vh;
+  transform-origin: center -50vh;
   perspective-origin: center 50vh;
 }
 #view.mobile .hdri {
-  transform-origin: 50vw center;
+  transform-origin: -50vw center;
   perspective-origin: 50vw center;
 }
 
@@ -261,4 +261,9 @@ body {
   0% {opacity: 1;}
   20% {opacity: 1;}
   100% {opacity: 0;}
+}
+
+#bgm {
+  visibility: hidden;
+  z-index: -10;
 }
