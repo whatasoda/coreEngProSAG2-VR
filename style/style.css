@@ -93,6 +93,20 @@ body {
 .gui-content.back {
   z-index: 4;
 }
+.gui-content.front>div, .gui-content.front>svg {
+  display: none;
+  transition-duration: 0.75s;
+}
+.gui-content.front>div.loaded, .gui-content.front>svg.loaded {
+  display: inherit;
+  opacity: 1;
+  animation-name: loaded;
+  animation-duration: 1s;
+}
+@keyframes loaded {
+  0% {opacity: 0;}
+  100% {opacity: 1;}
+}
 #view:not(.mobile) .gui-content {
   width: 100vw;
   height: 100vh;
@@ -266,4 +280,98 @@ body {
 #bgm {
   visibility: hidden;
   z-index: -10;
+}
+
+.desc {
+  width: 100%;
+  height: 100%;
+}
+#view:not(.mobile) .desc{
+  padding: 6vh 0;
+}
+#view.mobile .desc{
+  padding: 0 3.5vw;
+}
+.desc>div{
+  max-width: 30%;
+  transition-duration: 0.2s;
+  overflow: visible;
+}
+#view:not(.mobile) .desc>div{
+  margin: 0.2vh 1vh;
+  border-bottom-right-radius: 1.5vh;
+}
+#view.mobile .desc>div{
+  margin: 1vw 0.2vw;
+  border-bottom-right-radius: 1.5vw;
+}
+.desc>div{
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 152, 0, 0.7);
+}
+/*.desc>div:nth-child(1){
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 130, 0, 0.5);
+}
+.desc>div:nth-child(2){
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 130, 0, 0.5);
+}
+.desc>div:nth-child(3){
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 130, 0, 0.5);
+}
+.desc>div:nth-child(4){
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 130, 0, 0.5);
+}
+.desc>div:nth-child(5){
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 130, 0, 0.5);
+}
+.desc>div:nth-child(6){
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 130, 0, 0.5);
+}
+.desc>div:nth-child(7){
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px rgba(255, 130, 0, 0.5);
+}*/
+
+.desc div div{
+  height: 95%;
+  color: #222;
+  text-align: center;
+  font-weight: bold;
+  text-shadow: #ccc 0 0 0.05em;
+  transition-duration: 0.25s;
+  opacity: 0;
+}
+.desc h1{
+  margin: 0.3em 0;
+}
+.desc div.active div{
+  opacity: 1;
+}
+#view:not(.mobile) .desc div div{
+  overflow: auto;
+  font-size: 3vh;
+  margin-left: 2vw;
+  width: 25vw;
+}
+#view.mobile .desc div div{
+  overflow: hidden;
+  font-size: 3vw;
+  margin-left: 2vh;
+  width: 25vh;
+}
+#view:not(.mobile) .VR-on .desc div div{
+  font-size: 2.25vh;
+  margin-left: 1vw;
+  width: 12.75vw;
+}
+#view.mobile .VR-on .desc div div{
+  font-size: 2.25vw;
+  margin-left: 1vh;
+  width: 12.75vh;
 }

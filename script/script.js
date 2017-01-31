@@ -11,7 +11,10 @@ const PSAVR = {
   reqestFull : undefined,
   exitFull : undefined,
   BGMThetaAvailableZone : 0.8,
-  BGMTheta : 0,
+  params : {
+    x : (()=>{ar=[];while(ar.length<7)ar[ar.length]= [] ;return ar;})(),
+    y : 0,
+  },
   fullElementType : undefined,
   get fullElement (){
     switch(PSAVR.fullElementType){
@@ -33,6 +36,8 @@ const PSAVR = {
   boxes  : document.getElementsByClassName("box"),
   faces  : document.getElementsByClassName("face"),
   loads  : document.getElementsByClassName("load"),
+  descs  : document.getElementsByClassName("desc"),
+  cardboard_icons  : document.getElementsByClassName("cardboard-icon"),
   spherical : {
     theta  : 0, // rad : vertical
     phi    : 0, // rad : horizonal
@@ -92,6 +97,7 @@ const PSAVR = {
       for(var n=0; n<PSAVR.timeout.length; n++) clearTimeout(PSAVR.timeout[n]);
       PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on);
       if(u === undefined){
+        PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on)+6;
         u = window.navigator.userAgent.toLowerCase();
         if((u.indexOf("windows") != -1 && u.indexOf("phone") != -1)
         || u.indexOf("iphone") != -1
@@ -104,15 +110,12 @@ const PSAVR = {
           PSAVR.view.className = "mobile";
           window.addEventListener("deviceorientation", (e)=>{
             if(!PSAVR.started){
-              PSAVR.spherical.phi_offset = -(-e.alpha + (Math.abs(e.beta)>90?180:0)) / 180 * Math.PI * (PSAVR.mobile?1:-1);
+              PSAVR.spherical.phi_offset = -(-e.alpha + (Math.abs(e.beta)>90?180:0)) / 180 * Math.PI;
               PSAVR.started = true;
             }
-            PSAVR.spherical.theta = (e.gamma + (Math.abs(e.beta)>90?90:-90)) / 180 * Math.PI * (PSAVR.mobile?1:-1);
-            PSAVR.spherical.phi   = (-e.alpha + (Math.abs(e.beta)>90?180:0)) / 180 * Math.PI * (PSAVR.mobile?1:-1);
-            for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,PSAVR.spherical.getMatrix3D());
-            if(PSAVR.bgm_ready == PSAVR.bgm.items.length) for(var n=0; n<6; n++){
-              PSAVR.bgm.items[n].setVolume(parseInt(PSAVR.bgm.applyRamp(PSAVR.spherical.phi_compressed(1,PSAVR.spherical.theta_stepped(1,2,0.5)?1:0),PSAVR.bgm.ramp[n],0.05) * (PSAVR.BGMTheta<1-PSAVR.BGMThetaAvailableZone?PSAVR.BGMTheta/(1-PSAVR.BGMThetaAvailableZone):1) * 100));
-            }
+            PSAVR.spherical.theta = (e.gamma + (Math.abs(e.beta)>90?90:-90)) / 180 * Math.PI;
+            PSAVR.spherical.phi   = (-e.alpha + (Math.abs(e.beta)>90?180:0)) / 180 * Math.PI;
+            PSAVR.refreshView();
           });
         }
         PSAVR.reqestFull =
@@ -151,11 +154,7 @@ const PSAVR = {
           if(PSAVR.mouseOn){
             PSAVR.spherical.theta_offset += e.movementY/100;
             PSAVR.spherical.phi_offset -= e.movementX/100;
-            for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,PSAVR.spherical.getMatrix3D());
-            PSAVR.BGMTheta = (PSAVR.spherical.theta_stepped(0.5,2,0.5)?1-PSAVR.spherical.theta_compressed(0.25,1):PSAVR.spherical.theta_compressed(0.25,1));
-            if(PSAVR.bgm_ready == PSAVR.bgm.items.length) for(var n=0; n<6; n++){
-              PSAVR.bgm.items[n].setVolume(parseInt(PSAVR.bgm.applyRamp(PSAVR.spherical.phi_compressed(1,PSAVR.spherical.theta_stepped(1,2,0.5)?1:0),PSAVR.bgm.ramp[n],0.05) * (PSAVR.BGMTheta<1-PSAVR.BGMThetaAvailableZone?PSAVR.BGMTheta/(1-PSAVR.BGMThetaAvailableZone):1) * 100));
-            }
+            PSAVR.refreshView();
           }
         });
         window.addEventListener("resize", (e)=>{
@@ -173,17 +172,23 @@ const PSAVR = {
         firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         onYouTubeIframeAPIReady = ()=>{
-          for(var n=0; n<6; n++) PSAVR.bgm.items[n] = new YT.Player(PSAVR.bgm.src[n][0], {height:'200', width:'200', videoId:PSAVR.bgm.src[n][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
+          PSAVR.regions.items[0] = new YT.Player(PSAVR.regions.bgm_src[0][0], {height:'200', width:'200', videoId:PSAVR.regions.bgm_src[0][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
         };
         onPlayerReady = (event)=>{
-          event.target.setVolume(0);
-          event.target.setLoop(true);
           availableQualityLevels = event.target.getAvailableQualityLevels()
           event.target.setPlaybackQuality(availableQualityLevels[availableQualityLevels.length]);
           event.target.playVideo();
+          event.target.setVolume(0);
+          event.target.setLoop(true);
+          PSAVR.loadProgress = 1;
           PSAVR.bgm_ready += 1;
+          if(PSAVR.bgm_ready<PSAVR.regions.bgm_src.length) PSAVR.regions.items[PSAVR.bgm_ready] = new YT.Player(PSAVR.regions.bgm_src[PSAVR.bgm_ready][0], {height:'200', width:'200', videoId:PSAVR.regions.bgm_src[PSAVR.bgm_ready][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
         };
+        onPlayerStateChange = (event)=>{
+          if(event.target.getPlayerState()===0) event.target.playVideo();
+        }
       }
+      for(var n=0;n<2;n++) PSAVR.descs[n].className = "desc";
       for(var m=0; m<2; m++){
         PSAVR.frames[m].className = "frame" + (PSAVR.vr_on?" VR-on":"") + (m?" sub":" primary");
         PSAVR.loads[m].className = "load";
@@ -196,6 +201,7 @@ const PSAVR = {
         for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++) PSAVR.images[m+PSAVR.vr_on][n].src = "./img/cubemap" + (m+PSAVR.vr_on) + "_" + ("0"+n).slice(-2) + ".bmp";
       }
 
+      PSAVR.refreshView();
       PSAVR.timeout[0] = setTimeout(()=>{
         PSAVR.refreshLoadStatus();
       }, 1000);
@@ -226,6 +232,10 @@ const PSAVR = {
         }, 1200);
         PSAVR.timeout[2] = setTimeout(()=>{
           PSAVR.started = false;
+          for(var n=0;n<2;n++){
+            PSAVR.descs[n].className = "desc loaded";
+            PSAVR.cardboard_icons[n].className.baseVal = "cardboard-icon loaded";
+          }
           for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.loads[m].className = "load";
         }, 3200);
         clearInterval(PSAVR.interval);
@@ -233,53 +243,84 @@ const PSAVR = {
     }, 50);
   },
 
-  refreshVisible : ()=>{
-    PSAVR.spherical.phi
+  refreshView : ()=>{
+    for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,PSAVR.spherical.getMatrix3D());
+    PSAVR.params.y = (PSAVR.spherical.theta_stepped(0.5,2,0.5)?1-PSAVR.spherical.theta_compressed(0.25,1):PSAVR.spherical.theta_compressed(0.25,1));
+    for(var n=0; n<PSAVR.regions.ramp.length; n++){
+      PSAVR.params.x[n][2] = PSAVR.spherical.phi_compressed(1,PSAVR.spherical.theta_stepped(1,2,0.5)?1:0);
+      PSAVR.params.x[n][0] = PSAVR.applyRamp(PSAVR.params.x[n][2],PSAVR.regions.ramp[n],0.005,0) * (PSAVR.params.y<1-PSAVR.BGMThetaAvailableZone?PSAVR.params.y/(1-PSAVR.BGMThetaAvailableZone):1);
+      PSAVR.params.x[n][1] = PSAVR.applyRamp(PSAVR.params.x[n][2],PSAVR.regions.ramp[n],-0.25,1) * (PSAVR.params.y<1-PSAVR.BGMThetaAvailableZone?PSAVR.params.y/(1-PSAVR.BGMThetaAvailableZone):1)+0.1;
+    }
+    for(var m=0; m<1+PSAVR.vr_on; m++) for(var n=0; n<PSAVR.regions.ramp.length; n++){
+      PSAVR.descs[m].children[n].style.height = (PSAVR.params.x[n][0] * 0.65 + 0.03) * (PSAVR.mobile?PSAVR.view.clientWidth:PSAVR.view.clientHeight) + "px";
+      PSAVR.descs[m].children[n].className = (PSAVR.params.x[n][0]>0.95?"active":"");
+      PSAVR.descs[m].children[n].style.width = (Math.pow(PSAVR.params.x[n][1],3) * 0.25 + 0.025) * (PSAVR.mobile?PSAVR.view.clientHeight:PSAVR.view.clientWidth) / (1+PSAVR.vr_on) + "px";
+    }
+    if(PSAVR.bgm_ready == PSAVR.regions.bgm_src.length) for(var n=0; n<6; n++) PSAVR.regions.items[n].setVolume(parseInt(PSAVR.params.x[n][0] * 100));
   },
 
-  bgm : {
-    src : [
+  applyRamp : (() => {
+    var count;
+    var result;
+    return applyRamp = (value, ramp, margin=0,id=0) => {
+      result = 0;
+      if(!Array.isArray(ramp)) result = 1;
+      if(!Array.isArray(ramp[0])) result = 1;
+      if(typeof value !== "number") result = 1;
+      if(typeof margin !== "number") result = 1;
+      if(result === 1){
+        console.log("input type is not correct!");
+        return result;
+      }
+      for(count=0; count<ramp.length; count++){
+        if(!(ramp[count][3+id] === -1 || ramp[count][2] === -2)){
+          if(ramp[count][0] === undefined || typeof ramp[count][0] !== "number") ramp[count][0] = -Infinity;
+          if(ramp[count][1] === undefined || typeof ramp[count][1] !== "number") ramp[count][1] =  Infinity;
+          if(margin<0){
+            if(ramp[count][0]+margin<0&&ramp[count][0]+margin>-1) ramp[ramp.length] = [ramp[count][0]+1,Infinity,-2,id];
+            if(ramp[count][1]-margin>1&&ramp[count][1]-margin<2) ramp[ramp.length] = [-Infinity,ramp[count][1]-1,-2,id];
+          }
+          ramp[count][3+id] = -1;
+        }
+        if(!(ramp[count][2]===-2&&ramp[count][3]!==id)){
+          if(margin>0){
+            if(ramp[count][0] < value && value < ramp[count][1]){
+              if(ramp[count][0]+margin > value) return result = 1 - (ramp[count][0]+margin-value) /  margin;
+              if(ramp[count][1]-margin < value) return result = 1 - (ramp[count][1]-margin-value) / -margin;
+              return result = 1;
+            }
+          } else {
+            if(ramp[count][0]+margin < value && value < ramp[count][1]-margin){
+              if(ramp[count][0] > value) return result = 1 - (ramp[count][0]-value) / -margin;
+              if(ramp[count][1] < value) return result = 1 - (ramp[count][1]-value) / margin;
+              return result = 1;
+            }
+          }
+        }
+      }
+      return result = 0;
+    };
+  })(),
+
+  regions : {
+    bgm_src : [
       ['kyoto'   , 'EUrhnp5y3k4'],
       ['tokyo'   , '3BOMFNPe3f0'],
-      ['china'   , '3BOMFNPe3f0'],
+      ['china'   , 'Lr2811Z25uo'],
       ['shanghai', 'VrOB2g_i7zo'],
       ['norway'  , '3BOMFNPe3f0'],
       ['malaysia', 'hwAOsnMqbcY'],
     ],
     items : [],
     ramp : [
-        [[0.10,0.30],],
-        [[0.25,0.45],],
-        [[0.40,0.60],],
-        [[0.55,0.75],],
-        [[0.70,0.90],],
-        [[0.85,1.00],],
+      [[0.795,0.95],],
+      [[0.645,0.80],],
+      [[0.495,0.65],],
+      [[0.345,0.50],],
+      [[0.195,0.35],],
+      [[0.045,0.20],],
+      [[0.945,">>"],[">>",0.05]],
     ],
-    applyRamp : (() => {
-      var count;
-      var result;
-      return applyRamp = (value, ramp, margin=0) => {
-        result = 0;
-        if(!Array.isArray(ramp)) result = 1;
-        if(!Array.isArray(ramp[0])) result = 1;
-        if(typeof value !== "number") result = 1;
-        if(typeof margin !== "number") result = 1;
-        if(result === 1){
-          console.log("input type is not correct!");
-          return result;
-        }
-        for(count=0; count<ramp.length; count++){
-          if(ramp[count][0] === undefined || typeof ramp[count][0] !== "number") ramp[count][0] = -Infinity;
-          if(ramp[count][1] === undefined || typeof ramp[count][1] !== "number") ramp[count][1] =  Infinity;
-          if(ramp[count][0] < value && value < ramp[count][1]){
-            if(ramp[count][0]+margin > value) return result = 1 - (ramp[count][0]+margin - value) /  margin;
-            if(ramp[count][1]-margin < value) return result = 1 - (ramp[count][1]-margin - value) / -margin;
-            return result = 1;
-          }
-        }
-        return result = 0;
-      };
-    })(),
   },
 
 };
