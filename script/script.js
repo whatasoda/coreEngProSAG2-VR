@@ -166,26 +166,32 @@ const PSAVR = {
             }
             PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/scale\(.*?\)/,"scale(" + PSAVR.boxes[m].clientWidth/2 + ")");
           }
+          for(var n=0; n<PSAVR.regions.items.length; n++) PSAVR.regions.items[n].a.style.transform = "scaleX("+ PSAVR.view.clientWidth/55 +") scaleY("+ PSAVR.view.clientHeight/30 +")";
         });
         tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         onYouTubeIframeAPIReady = ()=>{
-          PSAVR.regions.items[0] = new YT.Player(PSAVR.regions.bgm_src[0][0], {height:'200', width:'200', videoId:PSAVR.regions.bgm_src[0][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
+          PSAVR.regions.items[0] = new YT.Player(PSAVR.regions.bgm_src[0][0], {height:'30', width:'55', videoId:PSAVR.regions.bgm_src[0][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
         };
         onPlayerReady = (event)=>{
           availableQualityLevels = event.target.getAvailableQualityLevels()
           event.target.setPlaybackQuality(availableQualityLevels[availableQualityLevels.length]);
-          event.target.playVideo();
+          if(!PSAVR.mobile) event.target.playVideo();
           event.target.setVolume(0);
-          event.target.setLoop(true);
+          event.target.a.style.transform = "scaleX("+ PSAVR.view.clientWidth/55 +") scaleY("+ PSAVR.view.clientHeight/30 +")";
           PSAVR.loadProgress = 1;
           PSAVR.bgm_ready += 1;
-          if(PSAVR.bgm_ready<PSAVR.regions.bgm_src.length) PSAVR.regions.items[PSAVR.bgm_ready] = new YT.Player(PSAVR.regions.bgm_src[PSAVR.bgm_ready][0], {height:'200', width:'200', videoId:PSAVR.regions.bgm_src[PSAVR.bgm_ready][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
+          if(PSAVR.bgm_ready<PSAVR.regions.bgm_src.length) PSAVR.regions.items[PSAVR.bgm_ready] = new YT.Player(PSAVR.regions.bgm_src[PSAVR.bgm_ready][0], {height:'35', width:'55', videoId:PSAVR.regions.bgm_src[PSAVR.bgm_ready][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
         };
         onPlayerStateChange = (event)=>{
-          if(event.target.getPlayerState()===0) event.target.playVideo();
+          if(PSAVR.mobile){
+            if([-1,0,2].indexOf(event.target.getPlayerState())+1) event.target.a.style.zIndex = "10";
+            if(event.target.getPlayerState()===1) event.target.a.style.zIndex = "-10";
+          } else {
+            if(event.target.getPlayerState()===0) event.target.playVideo();
+          }
         }
       }
       for(var n=0;n<2;n++) PSAVR.descs[n].className = "desc";
