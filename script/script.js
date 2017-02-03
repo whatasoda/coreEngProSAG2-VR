@@ -1,12 +1,14 @@
 var onYoutubeIframeAPIReady, onPlayerReady, onPlayerStateChange;
 const PSAVR = {
+  initialized : false,
   mouseOn : false,
   mobile : false,
+  bgm_available : true,
   vr_on : 0,
   image_count : 6,
   _loadProgress : 0,
   bgm_ready : 0,
-  interval : undefined,
+  interval : [],
   timeout : [],
   reqestFull : undefined,
   exitFull : undefined,
@@ -30,14 +32,16 @@ const PSAVR = {
   get loadProgress(){
     return ((this._loadProgress/(this.image_count*(1+this.vr_on)))*100);
   },
-  view   : document.getElementById("view"),
-  debug   : document.getElementById("debug"),
+  view : document.getElementById("view"),
+  tap : document.getElementById("tap"),
   frames : document.getElementsByClassName("frame"),
-  boxes  : document.getElementsByClassName("box"),
-  faces  : document.getElementsByClassName("face"),
-  loads  : document.getElementsByClassName("load"),
-  descs  : document.getElementsByClassName("desc"),
-  cardboard_icons  : document.getElementsByClassName("cardboard-icon"),
+  boxes : document.getElementsByClassName("box"),
+  faces : document.getElementsByClassName("face"),
+  loads : document.getElementsByClassName("load"),
+  descs : document.getElementsByClassName("desc"),
+  bgms : document.getElementsByClassName("bgm"),
+  playings : document.getElementsByClassName("playing"),
+  cardboard_icons : document.getElementsByClassName("cardboard-icon"),
   spherical : {
     theta  : 0, // rad : vertical
     phi    : 0, // rad : horizonal
@@ -45,6 +49,9 @@ const PSAVR = {
     theta_offset : 0, // rad : vertical
     phi_offset   : 0, // rad : horizonal
     spin_offset  : 0, // rad : axis
+    theta_offset_abs : 0, // rad : vertical
+    phi_offset_abs   : -0.1, // rad : horizonal
+    spin_offset_abs  : 0, // rad : axis
     get theta_current(){return (this.theta + this.theta_offset)},
     get phi_current(){return (this.phi + this.phi_offset)},
     theta_compressed : (seq, offset=0) => {return (((PSAVR.spherical.theta_current/Math.PI)%(2*seq)+2*seq+offset)%(2*seq)/(2*seq))},
@@ -55,9 +62,9 @@ const PSAVR = {
       var matrix = [];
       var  x,  y,  z, sx, sy, sz, cx, cy, cz;
       return getMatrix3D = () => {
-        x = PSAVR.spherical.theta + PSAVR.spherical.theta_offset;
-        y = PSAVR.spherical.phi   + PSAVR.spherical.phi_offset;
-        z = PSAVR.spherical.spin  + PSAVR.spherical.spin_offset;
+        x = PSAVR.spherical.theta + PSAVR.spherical.theta_offset + PSAVR.spherical.theta_offset_abs;
+        y = PSAVR.spherical.phi   + PSAVR.spherical.phi_offset + PSAVR.spherical.phi_offset_abs;
+        z = PSAVR.spherical.spin  + PSAVR.spherical.spin_offset + PSAVR.spherical.spin_offset_abs;
         [sx, sy, sz] = [Math.sin(x), Math.sin(y), Math.sin(z)];
         [cx, cy, cz] = [Math.cos(x), Math.cos(y), Math.cos(z)];
         matrix = [
@@ -87,18 +94,20 @@ const PSAVR = {
   ],
 
   initialize : (() => {
-    var index_parent, index;
     var style;
     var u;
     var tag, firstScriptTag;
     var availableQualityLevels;
     return initialize = () => {
-      clearInterval(PSAVR.interval);
+      window.alert("This is still ongoing, and has several problems. We are going to complete by next monday.")
+      for(var n=0; n<PSAVR.interval.length; n++) clearInterval(PSAVR.interval[n]);
       for(var n=0; n<PSAVR.timeout.length; n++) clearTimeout(PSAVR.timeout[n]);
+      PSAVR.initialized = false;
       PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on);
       if(u === undefined){
-        PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on)+6;
         u = window.navigator.userAgent.toLowerCase();
+        if(u.indexOf("iphone") != -1 || u.indexOf("ipod") != -1) PSAVR.bgm_available = false;
+        else PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on)+6;
         if((u.indexOf("windows") != -1 && u.indexOf("phone") != -1)
         || u.indexOf("iphone") != -1
         || u.indexOf("ipod") != -1
@@ -106,7 +115,7 @@ const PSAVR = {
         || (u.indexOf("firefox") != -1 && u.indexOf("mobile") != -1)
         || u.indexOf("blackberry") != -1){
           PSAVR.mobile = true;
-          window.alert("画面の自動回転をオフにした状態で御覧ください。");
+          window.alert("画面の回転をロックした状態で御覧ください。\nOKをタップで先に進みます。");
           PSAVR.view.className = "mobile";
           window.addEventListener("deviceorientation", (e)=>{
             if(!PSAVR.started){
@@ -136,18 +145,7 @@ const PSAVR = {
         } else {
           PSAVR.enableFull = true;
         }
-        for(var m=0; m<3; m++){ for(var n=0; n<PSAVR.image_count; n++){
-          PSAVR.images[m][n].onload = (e)=>{
-            index_parent = parseInt(e.srcElement.src.slice(-8).slice(0,1)) - PSAVR.vr_on;
-            index = parseInt(e.srcElement.src.slice(-6).slice(0,2));
-            style = PSAVR.box_transform[index%6 + (index/6 > 1?2:0)];
-            PSAVR.boxes[index_parent].children[index].appendChild(PSAVR.images[index_parent+PSAVR.vr_on][index]);
-            PSAVR.boxes[index_parent].children[index].innerHTML = PSAVR.boxes[index_parent].children[index].innerHTML + PSAVR.boxes[index_parent].children[index].innerHTML;
-            PSAVR.boxes[index_parent].children[index].children[0].style.transform = style[0] + (PSAVR.boxes[index_parent].clientWidth/2) + style[1];
-            PSAVR.boxes[index_parent].children[index].children[1].style.transform = style[0] + (PSAVR.boxes[index_parent].clientWidth/2) + style[1];
-            PSAVR.loadProgress = 1;
-          }
-        }}
+        for(var m=0; m<3; m++) for(var n=0; n<PSAVR.image_count; n++) PSAVR.images[m][n].addEventListener("load", PSAVR.image_load);
         document.addEventListener("mousedown", (e)=>{ PSAVR.mouseOn = true; });
         document.addEventListener("mouseup", (e)=>{ PSAVR.mouseOn = false; });
         document.addEventListener("mousemove", (e)=>{
@@ -166,31 +164,33 @@ const PSAVR = {
             }
             PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/scale\(.*?\)/,"scale(" + PSAVR.boxes[m].clientWidth/2 + ")");
           }
-          for(var n=0; n<PSAVR.regions.items.length; n++) PSAVR.regions.items[n].a.style.transform = "scaleX("+ PSAVR.view.clientWidth/55 +") scaleY("+ PSAVR.view.clientHeight/30 +")";
+          if(PSAVR.mobile && PSAVR.bgm_available) for(var n=0; n<PSAVR.regions.items.length; n++) PSAVR.regions.items[n].a.style.transform = "scaleX("+ PSAVR.view.clientWidth/30 +") scaleY("+ PSAVR.view.clientHeight/30 +")";
         });
-        tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        onYouTubeIframeAPIReady = ()=>{
-          PSAVR.regions.items[0] = new YT.Player(PSAVR.regions.bgm_src[0][0], {height:'30', width:'55', videoId:PSAVR.regions.bgm_src[0][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
-        };
-        onPlayerReady = (event)=>{
-          availableQualityLevels = event.target.getAvailableQualityLevels()
-          event.target.setPlaybackQuality(availableQualityLevels[availableQualityLevels.length]);
-          if(!PSAVR.mobile) event.target.playVideo();
-          event.target.setVolume(0);
-          event.target.a.style.transform = "scaleX("+ PSAVR.view.clientWidth/55 +") scaleY("+ PSAVR.view.clientHeight/30 +")";
-          PSAVR.loadProgress = 1;
-          PSAVR.bgm_ready += 1;
-          if(PSAVR.bgm_ready<PSAVR.regions.bgm_src.length) PSAVR.regions.items[PSAVR.bgm_ready] = new YT.Player(PSAVR.regions.bgm_src[PSAVR.bgm_ready][0], {height:'35', width:'55', videoId:PSAVR.regions.bgm_src[PSAVR.bgm_ready][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
-        };
-        onPlayerStateChange = (event)=>{
-          if(PSAVR.mobile){
-            if([-1,0,2].indexOf(event.target.getPlayerState())+1) event.target.a.style.zIndex = "10";
-            if(event.target.getPlayerState()===1) event.target.a.style.zIndex = "-10";
-          } else {
-            if(event.target.getPlayerState()===0) event.target.playVideo();
+        if(PSAVR.bgm_available){
+          tag = document.createElement('script');
+          tag.src = "https://www.youtube.com/iframe_api";
+          firstScriptTag = document.getElementsByTagName('script')[0];
+          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+          onYouTubeIframeAPIReady = ()=>{
+            PSAVR.regions.items[0] = new YT.Player(PSAVR.regions.bgm_src[0][0], {height:'100', width:'140', videoId:PSAVR.regions.bgm_src[0][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
+          };
+          onPlayerReady = (event)=>{
+            availableQualityLevels = event.target.getAvailableQualityLevels()
+            event.target.setPlaybackQuality(availableQualityLevels[availableQualityLevels.length]);
+            if(!PSAVR.mobile) event.target.playVideo();
+            else event.target.a.style.transform = "scaleX("+ PSAVR.view.clientWidth/30 +") scaleY("+ PSAVR.view.clientHeight/30 +")";
+            event.target.seekTo(0);
+            event.target.setVolume(0);
+            PSAVR.loadProgress = 1;
+            PSAVR.bgm_ready += 1;
+            if(PSAVR.bgm_ready<PSAVR.regions.bgm_src.length) PSAVR.regions.items[PSAVR.bgm_ready] = new YT.Player(PSAVR.regions.bgm_src[PSAVR.bgm_ready][0], {height:'100', width:'140', videoId:PSAVR.regions.bgm_src[PSAVR.bgm_ready][1], events:{'onReady': onPlayerReady,'onStateChange': onPlayerStateChange}});
+          };
+          onPlayerStateChange = (event)=>{
+            if([-1,0,2].indexOf(event.data)+1) event.target.seekTo(-event.target.getDuration());
+            if(PSAVR.mobile && event.data===1){
+              event.target.a.className = "playing";
+              event.target.a.parentNode.style.zIndex = "-1";
+            }
           }
         }
       }
@@ -204,7 +204,7 @@ const PSAVR = {
       for(var m=0; m<1+PSAVR.vr_on; m++){
         PSAVR.boxes[m].style.transform = (PSAVR.mobile?"rotate(-90deg) ":"") + "scale(" + PSAVR.boxes[m].clientWidth/2 + ") " + PSAVR.spherical.getMatrix3D();
         PSAVR.loads[m].className = "load loadstart";
-        for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++) PSAVR.images[m+PSAVR.vr_on][n].src = "./img/cubemap" + (m+PSAVR.vr_on) + "_" + ("0"+n).slice(-2) + ".bmp";
+        for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++) PSAVR.images[m+PSAVR.vr_on][n].src = "./gmi/cubemap" + (m+PSAVR.vr_on) + "_" + ("0"+n).slice(-2) + ".bmp";
       }
 
       PSAVR.refreshView();
@@ -218,8 +218,22 @@ const PSAVR = {
     }
   })(),
 
+  image_load : (()=>{
+    var index_parent, index, style;
+    return image_load = (e)=>{
+      index_parent = parseInt(e.srcElement.src.slice(-8).slice(0,1)) - PSAVR.vr_on;
+      index = parseInt(e.srcElement.src.slice(-6).slice(0,2));
+      style = PSAVR.box_transform[index%6 + (index/6 > 1?2:0)];
+      PSAVR.boxes[index_parent].children[index].appendChild(PSAVR.images[index_parent+PSAVR.vr_on][index]);
+      PSAVR.boxes[index_parent].children[index].innerHTML = PSAVR.boxes[index_parent].children[index].innerHTML + PSAVR.boxes[index_parent].children[index].innerHTML;
+      PSAVR.boxes[index_parent].children[index].children[0].style.transform = style[0] + (PSAVR.boxes[index_parent].clientWidth/2) + style[1];
+      PSAVR.boxes[index_parent].children[index].children[1].style.transform = style[0] + (PSAVR.boxes[index_parent].clientWidth/2) + style[1];
+      PSAVR.loadProgress = 1;
+    };
+  })(),
+
   alert_for_iOS_mobile : ()=>{
-    var message= "iPhoneでは自動で全画面表示ができません。\nこのページをホームに追加してからページを表示して下さい。";
+    var message= "このページを「ホームに追加」してからページを見ると全画面で見ることが出来ます。※iPhoneでは現在BGMを再生することができません。\nOKをタップで先に進みます。";
     window.alert(message);
   },
 
@@ -230,21 +244,34 @@ const PSAVR = {
   },
 
   refreshLoadStatus : ()=>{
-    PSAVR.interval = setInterval(()=>{
+    PSAVR.interval[0] = setInterval(()=>{
       for(var m=0; m<1+PSAVR.vr_on; m++) for(var n=2; n<6; n++) PSAVR.loads[m].children[0].children[n].children[1].style.height = PSAVR.loadProgress + "%";
       if(PSAVR.loadProgress < 2.5){
-        PSAVR.timeout[1] = setTimeout(()=>{
-          for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.loads[m].className = "load loadstart loadend";
-        }, 1200);
-        PSAVR.timeout[2] = setTimeout(()=>{
-          PSAVR.started = false;
-          for(var n=0;n<2;n++){
-            PSAVR.descs[n].className = "desc loaded";
-            PSAVR.cardboard_icons[n].className.baseVal = "cardboard-icon loaded";
+        clearInterval(PSAVR.interval[0]);
+        if(PSAVR.mobile && PSAVR.regions.bgm_src.length !== PSAVR.playings.length){
+          PSAVR.tap.style.display = "block";
+          if(PSAVR.bgm_available) for(var n=0; n<PSAVR.regions.bgm_src.length; n++) PSAVR.regions.items[n].a.parentNode.style.zIndex = "1";
+        }
+        PSAVR.interval[1] = setInterval(()=>{
+          if(PSAVR.bgm_available && PSAVR.mobile && PSAVR.regions.bgm_src.length !== PSAVR.playings.length){
+            PSAVR.tap.innerHTML = "Tap " + (PSAVR.regions.bgm_src.length-PSAVR.playings.length) + " more times!";
+          } else {
+            clearInterval(PSAVR.interval[1]);
+            if(PSAVR.mobile) PSAVR.tap.style.display = "none";
+            PSAVR.timeout[1] = setTimeout(()=>{
+              for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.loads[m].className = "load loadstart loadend";
+            }, 1200);
+            PSAVR.timeout[2] = setTimeout(()=>{
+              PSAVR.started = false;
+              PSAVR.initialized = true;
+              for(var n=0;n<2;n++){
+                PSAVR.descs[n].className = "desc loaded";
+                PSAVR.cardboard_icons[n].className.baseVal = "cardboard-icon loaded";
+              }
+              for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.loads[m].className = "load";
+            }, 3200);
           }
-          for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.loads[m].className = "load";
-        }, 3200);
-        clearInterval(PSAVR.interval);
+        }, 100);
       }
     }, 50);
   },
@@ -262,7 +289,7 @@ const PSAVR = {
       PSAVR.descs[m].children[n].className = (PSAVR.params.x[n][0]>0.95?"active":"");
       PSAVR.descs[m].children[n].style.width = (Math.pow(PSAVR.params.x[n][1],3) * 0.25 + 0.025) * (PSAVR.mobile?PSAVR.view.clientHeight:PSAVR.view.clientWidth) / (1+PSAVR.vr_on) + "px";
     }
-    if(PSAVR.bgm_ready == PSAVR.regions.bgm_src.length) for(var n=0; n<6; n++) PSAVR.regions.items[n].setVolume(parseInt(PSAVR.params.x[n][0] * 100));
+    if(PSAVR.bgm_ready == PSAVR.regions.bgm_src.length) for(var n=0; n<6; n++) PSAVR.regions.items[n].setVolume(parseInt(PSAVR.params.x[n][0] * 100)*(PSAVR.initialized?1:0));
   },
 
   applyRamp : (() => {
@@ -311,10 +338,10 @@ const PSAVR = {
   regions : {
     bgm_src : [
       ['kyoto'   , 'EUrhnp5y3k4'],
-      ['tokyo'   , '3BOMFNPe3f0'],
+      ['tokyo'   , '-PXbz9DXn8s'],
       ['china'   , 'Lr2811Z25uo'],
       ['shanghai', 'VrOB2g_i7zo'],
-      ['norway'  , '3BOMFNPe3f0'],
+      ['norway'  , 'OgYWssWn7uQ'],
       ['malaysia', 'hwAOsnMqbcY'],
     ],
     items : [],
