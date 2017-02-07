@@ -22,6 +22,7 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
+  overflow: hidden;
   top: 0;
   left: 0;
   z-index: 0;
@@ -92,10 +93,6 @@ body {
   position: absolute;
   backface-visibility: hidden;
 }
-.face>img:first-child {
-  width: calc(100% + 1px);
-}
-
 
 .gui {
   width: 100%;
@@ -303,97 +300,92 @@ body {
   100% {opacity: 0;}
 }
 
-
-.desc {
+#desc {
   width: 100%;
   height: 100%;
 }
-#view:not(.mobile) .desc{
+#view:not(.mobile) #desc{
   padding: 6vh 0;
 }
-#view.mobile .desc{
+#view.mobile #desc{
   padding: 0 3.5vw;
 }
-.desc>div{
-  max-width: 30%;
+#desc>div{
   transition-duration: 0.2s;
-  overflow: visible;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+  background: rgba(255, 255, 255, 0.3);
+  border-left: solid 6px #ed6c00;
 }
-#view:not(.mobile) .desc>div{
+#view:not(.mobile) #desc>div{
+  max-width: 30vw;
   margin: 0.2vh 1vh;
   border-bottom-right-radius: 1.5vh;
 }
-#view.mobile .desc>div{
+#view.mobile #desc>div{
+  max-width: 30vh;
   margin: 1vw 0.2vw;
   border-bottom-right-radius: 1.5vw;
 }
-.desc>div{
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 152, 0, 0.7);
+#view:not(.mobile) #desc>div.active{
+  padding: 2vw 2.5%;
+  border-left: solid 1.2vw #ed6c00;
 }
-/*.desc>div:nth-child(1){
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 130, 0, 0.5);
+#view.mobile #desc>div.active{
+  padding: 2vh 2.5%;
+  border-left: solid 1.2vh #ed6c00;
 }
-.desc>div:nth-child(2){
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 130, 0, 0.5);
-}
-.desc>div:nth-child(3){
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 130, 0, 0.5);
-}
-.desc>div:nth-child(4){
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 130, 0, 0.5);
-}
-.desc>div:nth-child(5){
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 130, 0, 0.5);
-}
-.desc>div:nth-child(6){
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 130, 0, 0.5);
-}
-.desc>div:nth-child(7){
-  background: rgba(255, 255, 255, 0.3);
-  border-left: solid 6px rgba(255, 130, 0, 0.5);
-}*/
 
-.desc div div{
-  height: 95%;
-  color: #222;
+#desc div div:nth-child(2){
+  height: 100%;
+  width: 100%;
+  overflow: scroll;
+  color: #000;
   text-align: center;
   font-weight: bold;
-  text-shadow: #ccc 0 0 0.05em;
+  text-shadow: #c0e6ff 0 0 1em;
   transition-duration: 0.25s;
   opacity: 0;
 }
-.desc h1{
-  margin: 0.3em 0;
-}
-.desc div.active div{
+#desc div.active div:nth-child(2){
   opacity: 1;
 }
-#view:not(.mobile) .desc div div{
-  overflow: auto;
+#view:not(.mobile) #desc div div:nth-child(2){
   font-size: 3vh;
-  margin-left: 2vw;
-  width: 25vw;
+  padding-right: 100vw;
+  padding-bottom: 100vh;
 }
-#view.mobile .desc div div{
-  overflow: hidden;
+#view.mobile #desc div div:nth-child(2){
   font-size: 3vw;
-  margin-left: 2vh;
-  width: 25vh;
+  padding-right: 100vh;
+  padding-bottom: 100vw;
 }
-#view:not(.mobile) .VR-on .desc div div{
-  font-size: 2.25vh;
-  margin-left: 1vw;
-  width: 12.75vw;
+#desc div div:nth-child(2n+1){
+  height: 2.5%;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  background: #ed6c00;
 }
-#view.mobile .VR-on .desc div div{
-  font-size: 2.25vw;
-  margin-left: 1vh;
-  width: 12.75vh;
+#desc div div:first-child{
+  top: 0;
+}
+#desc div div:last-child{
+  bottom: 0;
+}
+#desc h1{
+  margin: 0.3em 0;
+}
+#desc h3{
+  margin: 0;
+}
+#desc li{
+  text-align: left;
+}
+#desc li li{
+  font-size: 0.8em;
+}
+#desc small{
+  font-size: 0.5em;
 }

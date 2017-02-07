@@ -1,11 +1,12 @@
 var onYoutubeIframeAPIReady, onPlayerReady, onPlayerStateChange;
 const PSAVR = {
+  TMB : ["t","m","b"],
   initialized : false,
   mouseOn : false,
   mobile : false,
   bgm_available : true,
   vr_on : 0,
-  image_count : 6,
+  image_count : 24,
   _loadProgress : 0,
   bgm_ready : 0,
   interval : [],
@@ -13,8 +14,11 @@ const PSAVR = {
   reqestFull : undefined,
   exitFull : undefined,
   BGMThetaAvailableZone : 0.8,
+  division : [0,0],
+  lap : 0,
   params : {
     x : (()=>{ar=[];while(ar.length<7)ar[ar.length]= [] ;return ar;})(),
+    xBase : [],
     y : 0,
   },
   fullElementType : undefined,
@@ -34,11 +38,11 @@ const PSAVR = {
   },
   view : document.getElementById("view"),
   tap : document.getElementById("tap"),
+  desc : document.getElementById("desc"),
   frames : document.getElementsByClassName("frame"),
   boxes : document.getElementsByClassName("box"),
   faces : document.getElementsByClassName("face"),
   loads : document.getElementsByClassName("load"),
-  descs : document.getElementsByClassName("desc"),
   bgms : document.getElementsByClassName("bgm"),
   playings : document.getElementsByClassName("playing"),
   cardboard_icons : document.getElementsByClassName("cardboard-icon"),
@@ -50,14 +54,14 @@ const PSAVR = {
     phi_offset   : 0, // rad : horizonal
     spin_offset  : 0, // rad : axis
     theta_offset_abs : 0, // rad : vertical
-    phi_offset_abs   : -0.1, // rad : horizonal
+    phi_offset_abs   : 0, // rad : horizonal
     spin_offset_abs  : 0, // rad : axis
     get theta_current(){return (this.theta + this.theta_offset)},
     get phi_current(){return (this.phi + this.phi_offset)},
-    theta_compressed : (seq, offset=0) => {return (((PSAVR.spherical.theta_current/Math.PI)%(2*seq)+2*seq+offset)%(2*seq)/(2*seq))},
-    phi_compressed : (seq, offset=0) => {return (((PSAVR.spherical.phi_current/Math.PI)%(2*seq)+2*seq+offset)%(2*seq)/(2*seq))},
-    theta_stepped : (seq, step, offset=0) => {return parseInt(PSAVR.spherical.theta_compressed(seq,offset)*step)},
-    phi_stepped : (seq, step, offset=0) => {return parseInt(PSAVR.spherical.phi_compressed(seq,offset)*step)},
+    theta_compressed : (seq, offset=0,current=true) => {return ((((current?PSAVR.spherical.theta_current:PSAVR.spherical.theta)/Math.PI)%(2*seq)+2*seq+offset)%(2*seq)/(2*seq))},
+    phi_compressed : (seq, offset=0,current=true) => {return ((((current?PSAVR.spherical.phi_current:PSAVR.spherical.phi)/Math.PI)%(2*seq)+2*seq+offset)%(2*seq)/(2*seq))},
+    theta_stepped : (seq, step, offset=0,current=true) => {return parseInt(PSAVR.spherical.theta_compressed(seq,offset,current)*step)},
+    phi_stepped : (seq, step, offset=0,current=true) => {return parseInt(PSAVR.spherical.phi_compressed(seq,offset,current)*step)},
     getMatrix3D : (() => {
       var matrix = [];
       var  x,  y,  z, sx, sy, sz, cx, cy, cz;
@@ -88,9 +92,9 @@ const PSAVR = {
   ],
 
   images : [
-    (()=>{im=[];while(im.length<6)im[im.length]= new Image() ;return im;})(),
-    (()=>{im=[];while(im.length<6)im[im.length]= new Image() ;return im;})(),
-    (()=>{im=[];while(im.length<6)im[im.length]= new Image() ;return im;})(),
+    (()=>{im=[];while(im.length<3*8)im[im.length]= [new Image(),new Image()] ;return im;})(),
+    (()=>{im=[];while(im.length<3*8)im[im.length]= [new Image(),new Image()] ;return im;})(),
+    (()=>{im=[];while(im.length<3*8)im[im.length]= [new Image(),new Image()] ;return im;})(),
   ],
 
   initialize : (() => {
@@ -99,15 +103,15 @@ const PSAVR = {
     var tag, firstScriptTag;
     var availableQualityLevels;
     return initialize = () => {
-      window.alert("This is still ongoing, and has several problems. We are going to complete by next monday.")
       for(var n=0; n<PSAVR.interval.length; n++) clearInterval(PSAVR.interval[n]);
       for(var n=0; n<PSAVR.timeout.length; n++) clearTimeout(PSAVR.timeout[n]);
       PSAVR.initialized = false;
       PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on);
       if(u === undefined){
         u = window.navigator.userAgent.toLowerCase();
-        if(u.indexOf("iphone") != -1 || u.indexOf("ipod") != -1) PSAVR.bgm_available = false;
-        else PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on)+6;
+        PSAVR.bgm_available = false;
+        // if(u.indexOf("iphone") != -1 || u.indexOf("ipod") != -1) PSAVR.bgm_available = false;
+        // else PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on)+6;
         if((u.indexOf("windows") != -1 && u.indexOf("phone") != -1)
         || u.indexOf("iphone") != -1
         || u.indexOf("ipod") != -1
@@ -123,7 +127,11 @@ const PSAVR = {
               PSAVR.started = true;
             }
             PSAVR.spherical.theta = (e.gamma + (Math.abs(e.beta)>90?90:-90)) / 180 * Math.PI;
-            PSAVR.spherical.phi   = (-e.alpha + (Math.abs(e.beta)>90?180:0)) / 180 * Math.PI;
+            PSAVR.spherical.phi   = ((-e.alpha + (Math.abs(e.beta)>90?180:0)+1080)%360) / 180 * Math.PI;
+            PSAVR.division[0] = PSAVR.spherical.phi_stepped(1,3,0,false);
+            if(PSAVR.division[0] !== PSAVR.division[1] && (PSAVR.division[0]+PSAVR.division[1])%2 === 0) PSAVR.lap = (PSAVR.lap+1)%2;
+            PSAVR.division[1] = PSAVR.division[0];
+            PSAVR.spherical.phi += 2 * PSAVR.lap * Math.PI;
             PSAVR.refreshView();
           });
         }
@@ -145,7 +153,7 @@ const PSAVR = {
         } else {
           PSAVR.enableFull = true;
         }
-        for(var m=0; m<3; m++) for(var n=0; n<PSAVR.image_count; n++) PSAVR.images[m][n].addEventListener("load", PSAVR.image_load);
+        for(var b=0; b<2; b++) for(var m=0; m<3; m++) for(var n=0; n<PSAVR.image_count; n++) PSAVR.images[m][n][b].addEventListener("load", PSAVR.image_load);
         document.addEventListener("mousedown", (e)=>{ PSAVR.mouseOn = true; });
         document.addEventListener("mouseup", (e)=>{ PSAVR.mouseOn = false; });
         document.addEventListener("mousemove", (e)=>{
@@ -158,9 +166,8 @@ const PSAVR = {
         window.addEventListener("resize", (e)=>{
           for(var m=0; m<1+PSAVR.vr_on; m++){
             for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++){
-              style = PSAVR.box_transform[n%6 + ((n/6)>1?2:0)];
-              PSAVR.boxes[m].children[n].children[0].style.transform = style[0] + (PSAVR.boxes[m].clientWidth/2) + style[1];
-              PSAVR.boxes[m].children[n].children[1].style.transform = style[0] + (PSAVR.boxes[m].clientWidth/2) + style[1];
+              style = PSAVR.box_transform[(n%3)%2?parseInt(n/3)%4+2:(n%3)/2];
+              for(var b=0; b<2; b++) PSAVR.images[m+PSAVR.vr_on][n][b].style.transform = style[0] + (PSAVR.boxes[m].clientWidth/2) + style[1];
             }
             PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/scale\(.*?\)/,"scale(" + PSAVR.boxes[m].clientWidth/2 + ")");
           }
@@ -194,7 +201,7 @@ const PSAVR = {
           }
         }
       }
-      for(var n=0;n<2;n++) PSAVR.descs[n].className = "desc";
+      PSAVR.desc.className = "desc";
       for(var m=0; m<2; m++){
         PSAVR.frames[m].className = "frame" + (PSAVR.vr_on?" VR-on":"") + (m?" sub":" primary");
         PSAVR.loads[m].className = "load";
@@ -204,7 +211,7 @@ const PSAVR = {
       for(var m=0; m<1+PSAVR.vr_on; m++){
         PSAVR.boxes[m].style.transform = (PSAVR.mobile?"rotate(-90deg) ":"") + "scale(" + PSAVR.boxes[m].clientWidth/2 + ") " + PSAVR.spherical.getMatrix3D();
         PSAVR.loads[m].className = "load loadstart";
-        for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++) PSAVR.images[m+PSAVR.vr_on][n].src = "./gmi/cubemap" + (m+PSAVR.vr_on) + "_" + ("0"+n).slice(-2) + ".bmp";
+        for(var b=0; b<2; b++) for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++) PSAVR.images[m+PSAVR.vr_on][n][b].src = "./img/cubemap/no" + (m+PSAVR.vr_on) + "/" + PSAVR.TMB[n%3] + ("0"+parseInt(n/3)).slice(-2) + ".png";
       }
 
       PSAVR.refreshView();
@@ -219,16 +226,19 @@ const PSAVR = {
   })(),
 
   image_load : (()=>{
-    var index_parent, index, style;
+    var index_parent, index, style, position, src_match;
     return image_load = (e)=>{
-      index_parent = parseInt(e.srcElement.src.slice(-8).slice(0,1)) - PSAVR.vr_on;
-      index = parseInt(e.srcElement.src.slice(-6).slice(0,2));
-      style = PSAVR.box_transform[index%6 + (index/6 > 1?2:0)];
-      PSAVR.boxes[index_parent].children[index].appendChild(PSAVR.images[index_parent+PSAVR.vr_on][index]);
-      PSAVR.boxes[index_parent].children[index].innerHTML = PSAVR.boxes[index_parent].children[index].innerHTML + PSAVR.boxes[index_parent].children[index].innerHTML;
-      PSAVR.boxes[index_parent].children[index].children[0].style.transform = style[0] + (PSAVR.boxes[index_parent].clientWidth/2) + style[1];
-      PSAVR.boxes[index_parent].children[index].children[1].style.transform = style[0] + (PSAVR.boxes[index_parent].clientWidth/2) + style[1];
-      PSAVR.loadProgress = 1;
+      src_match = e.srcElement.src.match(/\/img\/cubemap\/no(\d)*\/(.)(\d*)\./);
+      index_parent = parseInt(src_match[1]) - PSAVR.vr_on;
+      position = PSAVR.TMB.indexOf(src_match[2]);
+      index = parseInt(src_match[3]);
+      style = PSAVR.box_transform[(position%2?(index%4)+2:position/2)];
+      for(var b=0; b<2; b++){
+        PSAVR.boxes[index_parent].children[(position%2?(index%4)+2:position/2)].appendChild(PSAVR.images[index_parent+PSAVR.vr_on][index*3+position][b]);
+        PSAVR.images[index_parent+PSAVR.vr_on][index*3+position][b].style.transform = style[0] + (PSAVR.boxes[index_parent].clientWidth/2) + style[1];
+      }
+      PSAVR.images[index_parent+PSAVR.vr_on][index*3+position][0].style.width = "calc(100% + 1px)";
+      PSAVR.loadProgress = 0.5;
     };
   })(),
 
@@ -264,10 +274,8 @@ const PSAVR = {
             PSAVR.timeout[2] = setTimeout(()=>{
               PSAVR.started = false;
               PSAVR.initialized = true;
-              for(var n=0;n<2;n++){
-                PSAVR.descs[n].className = "desc loaded";
-                PSAVR.cardboard_icons[n].className.baseVal = "cardboard-icon loaded";
-              }
+              if(!PSAVR.vr_on) PSAVR.desc.className = "desc loaded";
+              for(var n=0; n<2; n++) PSAVR.cardboard_icons[n].className.baseVal = "cardboard-icon loaded";
               for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.loads[m].className = "load";
             }, 3200);
           }
@@ -279,15 +287,25 @@ const PSAVR = {
   refreshView : ()=>{
     for(var m=0; m<1+PSAVR.vr_on; m++) PSAVR.boxes[m].style.transform = PSAVR.boxes[m].style.transform.replace(/matrix3d\(.*?\)/,PSAVR.spherical.getMatrix3D());
     PSAVR.params.y = (PSAVR.spherical.theta_stepped(0.5,2,0.5)?1-PSAVR.spherical.theta_compressed(0.25,1):PSAVR.spherical.theta_compressed(0.25,1));
+    PSAVR.params.xBase[0] = PSAVR.spherical.phi_compressed(2,(PSAVR.spherical.theta_stepped(1,2,0.5)?1:0));
+    PSAVR.params.xBase[1] = 8-PSAVR.spherical.phi_stepped(2,8,(PSAVR.spherical.theta_stepped(1,2,0.5)?0.5:-0.5));
     for(var n=0; n<PSAVR.regions.ramp.length; n++){
-      PSAVR.params.x[n][2] = PSAVR.spherical.phi_compressed(1,PSAVR.spherical.theta_stepped(1,2,0.5)?1:0);
-      PSAVR.params.x[n][0] = PSAVR.applyRamp(PSAVR.params.x[n][2],PSAVR.regions.ramp[n],0.005,0) * (PSAVR.params.y<1-PSAVR.BGMThetaAvailableZone?PSAVR.params.y/(1-PSAVR.BGMThetaAvailableZone):1);
-      PSAVR.params.x[n][1] = PSAVR.applyRamp(PSAVR.params.x[n][2],PSAVR.regions.ramp[n],-0.25,1) * (PSAVR.params.y<1-PSAVR.BGMThetaAvailableZone?PSAVR.params.y/(1-PSAVR.BGMThetaAvailableZone):1)+0.1;
+      PSAVR.params.x[n][0] = PSAVR.applyRamp(PSAVR.params.xBase[0],PSAVR.regions.ramp[n],0.005,0) * (PSAVR.params.y<1-PSAVR.BGMThetaAvailableZone?PSAVR.params.y/(1-PSAVR.BGMThetaAvailableZone):1);
+      PSAVR.params.x[n][1] = PSAVR.applyRamp(PSAVR.params.xBase[0],PSAVR.regions.ramp[n],-0.25,1) * (PSAVR.params.y<1-PSAVR.BGMThetaAvailableZone?PSAVR.params.y/(1-PSAVR.BGMThetaAvailableZone):1)+0.1;
     }
-    for(var m=0; m<1+PSAVR.vr_on; m++) for(var n=0; n<PSAVR.regions.ramp.length; n++){
-      PSAVR.descs[m].children[n].style.height = (PSAVR.params.x[n][0] * 0.65 + 0.03) * (PSAVR.mobile?PSAVR.view.clientWidth:PSAVR.view.clientHeight) + "px";
-      PSAVR.descs[m].children[n].className = (PSAVR.params.x[n][0]>0.95?"active":"");
-      PSAVR.descs[m].children[n].style.width = (Math.pow(PSAVR.params.x[n][1],3) * 0.25 + 0.025) * (PSAVR.mobile?PSAVR.view.clientHeight:PSAVR.view.clientWidth) / (1+PSAVR.vr_on) + "px";
+    for(var m=0; m<1+PSAVR.vr_on; m++) for(var n=0; n<PSAVR.images[m+PSAVR.vr_on].length; n++){
+      if(parseInt(n/3)%4===3){
+        if((-2<parseInt(n/3)-PSAVR.params.xBase[1]&&parseInt(n/3)-PSAVR.params.xBase[1]<3) || parseInt(n/3)+8-PSAVR.params.xBase[1]<3 || -2<parseInt(n/3)-PSAVR.params.xBase[1]-8) for(var b=0; b<2; b++) PSAVR.images[m+PSAVR.vr_on][n][b].style.opacity = 1;
+        else for(var b=0; b<2; b++) PSAVR.images[m+PSAVR.vr_on][n][b].style.opacity = 0;
+      } else {
+        if((-2<parseInt(n/3)-PSAVR.params.xBase[1]&&parseInt(n/3)-PSAVR.params.xBase[1]<3) || parseInt(n/3)+8-PSAVR.params.xBase[1]<3 || -2<parseInt(n/3)-PSAVR.params.xBase[1]-8) for(var b=0; b<2; b++) PSAVR.images[m+PSAVR.vr_on][n][b].style.opacity = 0;
+        else for(var b=0; b<2; b++) PSAVR.images[m+PSAVR.vr_on][n][b].style.opacity = 1;
+      }
+    }
+    if(!PSAVR.vr_on) for(var n=0; n<PSAVR.regions.ramp.length; n++){
+      PSAVR.desc.children[n].style.height = (PSAVR.params.x[n][0] * 0.65 + 0.03) * (PSAVR.mobile?PSAVR.view.clientWidth:PSAVR.view.clientHeight) + "px";
+      PSAVR.desc.children[n].className = (PSAVR.params.x[n][0]>0.95?"active":"");
+      PSAVR.desc.children[n].style.width = (Math.pow(PSAVR.params.x[n][1],3) * 0.25 + 0.025) * (PSAVR.mobile?PSAVR.view.clientHeight:PSAVR.view.clientWidth) / (1+PSAVR.vr_on) + "px";
     }
     if(PSAVR.bgm_ready == PSAVR.regions.bgm_src.length) for(var n=0; n<6; n++) PSAVR.regions.items[n].setVolume(parseInt(PSAVR.params.x[n][0] * 100)*(PSAVR.initialized?1:0));
   },
@@ -341,18 +359,18 @@ const PSAVR = {
       ['tokyo'   , '-PXbz9DXn8s'],
       ['china'   , 'Lr2811Z25uo'],
       ['shanghai', 'VrOB2g_i7zo'],
-      ['norway'  , 'OgYWssWn7uQ'],
+      ['norway'  , 'bS67daZZre0'],
       ['malaysia', 'hwAOsnMqbcY'],
     ],
     items : [],
     ramp : [
-      [[0.795,0.95],],
-      [[0.645,0.80],],
-      [[0.495,0.65],],
-      [[0.345,0.50],],
-      [[0.195,0.35],],
-      [[0.045,0.20],],
-      [[0.945,">>"],[">>",0.05]],
+      [[0.75-0.005,0.85],],
+      [[0.56-0.005,0.75],],
+      [[0.40-0.005,0.56],],
+      [[0.22-0.005,0.40],],
+      [[0.10-0.005,0.22],],
+      [[0.95-0.005,">>"],[">>",0.1]],
+      [[0.85-0.005,0.95]],
     ],
   },
 
