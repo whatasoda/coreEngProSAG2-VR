@@ -109,9 +109,8 @@ const PSAVR = {
       PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on);
       if(u === undefined){
         u = window.navigator.userAgent.toLowerCase();
-        PSAVR.bgm_available = false;
-        // if(u.indexOf("iphone") != -1 || u.indexOf("ipod") != -1) PSAVR.bgm_available = false;
-        // else PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on)+6;
+        if(window.location.hash === "#muted" || u.indexOf("iphone") != -1 || u.indexOf("ipod") != -1) PSAVR.bgm_available = false;
+        else PSAVR._loadProgress = PSAVR.image_count*(1+PSAVR.vr_on)+6;
         if((u.indexOf("windows") != -1 && u.indexOf("phone") != -1)
         || u.indexOf("iphone") != -1
         || u.indexOf("ipod") != -1
